@@ -72,4 +72,11 @@ public class LibraryUser {
     public LocalDateTime getBlacklistedAt() {
         return blacklistedAt;
     }
+
+    public void releaseBlacklist() {
+        this.blacklisted = false;
+        this.blacklistReason = null;
+        this.blacklistMemo = null;
+        this.blacklistedAt = null;
+    }
 }

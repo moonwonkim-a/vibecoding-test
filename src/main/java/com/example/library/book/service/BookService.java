@@ -2,10 +2,13 @@ package com.example.library.book.service;
 
 import com.example.library.book.dto.BookDetailDto;
 import com.example.library.book.dto.BookListResponseDto;
+import com.example.library.book.dto.RankingItemDto;
 import com.example.library.book.repository.BookQueryRepository;
-import org.springframework.http.HttpStatus;
+import com.example.library.common.exception.BusinessException;
+import com.example.library.common.exception.ErrorCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 public class BookService {
@@ -23,8 +26,12 @@ public class BookService {
     public BookDetailDto getBookDetail(String isbn) {
         BookDetailDto detail = bookQueryRepository.findBookDetail(isbn);
         if (detail == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "도서를 찾을 수 없습니다.");
+            throw BusinessException.of(ErrorCode.EX_005);
         }
         return detail;
+    }
+
+    public List<RankingItemDto> getRankings(String category) {
+        return bookQueryRepository.findRankings(category);
     }
 }

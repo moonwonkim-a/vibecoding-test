@@ -56,6 +56,8 @@
 | TC-RENT-009 | EX-003 | 재고 0권 도서 대여 시도 | 대여 차단 |
 | TC-RENT-010 | FR-RENT-006 | 신규 이용자 첫 대여 | `library_users` 자동 생성 후 대여 성공 |
 | TC-RENT-011 | EX-014 | `user_code7` 형식 오류 | 요청 실패 |
+| TC-RENT-012 | EX-015 | 동일 `user_code7`에 다른 이름 입력 | 409 응답, 대여 차단 |
+| TC-RENT-013 | EX-009, NFR-010 | 동일 재고에 동시 대여 요청 2건 | 1건만 성공, 나머지 409 응답 |
 
 ## 6. 반납 테스트
 
@@ -67,6 +69,7 @@
 | TC-RETURN-004 | FR-RETURN-006 | 반납 기록 확인 | `return_date` 저장 |
 | TC-RETURN-005 | FR-RETURN-004, EX-004 | 연체 도서 반납 | 반납 허용, 연체 여부 true |
 | TC-RETURN-006 | EX-005 | 이용자 정보 불일치 | 조회 실패 |
+| TC-RETURN-007 | EX-015 | 반납 시 동일 `user_code7`에 다른 이름 입력 | 409 응답, 반납 차단 |
 
 ## 7. 대여 순위 테스트
 
@@ -82,6 +85,9 @@
 | TC-ADMIN-LOGIN-001 | FR-ADMIN-001 | 정상 로그인 | 로그인 성공 |
 | TC-ADMIN-LOGIN-002 | EX-008 | 잘못된 비밀번호 로그인 | 로그인 실패 |
 | TC-ADMIN-LOGIN-003 | NFR-004 | 관리자 비밀번호 저장 확인 | BCrypt 해시 저장 |
+| TC-ADMIN-LOGIN-004 | FR-ADMIN-001 | 정상 로그아웃 | 세션 무효화, 200 응답 |
+| TC-ADMIN-LOGIN-005 | NFR-006 | 로그아웃 후 관리자 API 접근 | 401 응답 |
+| TC-ADMIN-LOGIN-006 | FR-ADMIN-014 | 미인증 상태로 관리자 API 접근 | 401 + AUTH-001 응답 |
 
 ## 9. 관리자 도서 관리 테스트
 

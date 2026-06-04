@@ -33,4 +33,8 @@ public class LibraryAdmin {
         this.adminName = adminName;
         this.createdAt = createdAt;
     }
+
+    public String getAdminId() { return adminId; }
+    public String getAdminPw() { return adminPw; }
+    public String getAdminName() { return adminName; }
 }

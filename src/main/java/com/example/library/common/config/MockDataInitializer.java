@@ -193,15 +193,17 @@ public class MockDataInitializer implements CommandLineRunner {
         LocalDate rentDate = LocalDate.now().minusDays(daysAgo);
         LocalDate dueDate = rentDate.plusDays(21);
         LocalDate returnDate = rentDate.plusDays(duration);
-        return new LibraryRentRecord(
+        LibraryRentRecord record = new LibraryRentRecord(
                 inventory,
                 inventory.getBookInfo(),
                 user,
                 user.getUserName(),
                 rentDate,
                 dueDate,
-                returnDate,
-                returnDate.isAfter(dueDate)
+                null,
+                false
         );
+        record.markReturned(returnDate);
+        return record;
     }
 }
