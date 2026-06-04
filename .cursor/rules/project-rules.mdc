@@ -1,0 +1,83 @@
+# Project Rules
+
+이 프로젝트는 요구사항 문서 기반 바이브 코딩 미니 프로젝트이다.
+
+Cursor는 구현 전 반드시 아래 문서를 기준으로 작업한다.
+
+- `requirements.md`
+- `architecture.md`
+- `database-schema.md`
+- `api-spec.md`
+- `test-plan.md`
+
+## 작업 방식
+
+- 한 번에 전체 시스템을 구현하지 않는다.
+- 작은 기능 단위로 구현한다.
+- 구현 전 관련 요구사항 ID를 확인한다.
+- 구현 전 수정/생성할 파일과 API를 간단히 요약한다.
+- 요구사항 문서에 없는 기능은 임의로 추가하지 않는다.
+- 불명확한 요구사항은 추정하지 말고 질문하거나 TODO로 남긴다.
+- 백엔드 API 구현 후 테스트 코드를 작성한다.
+- 프론트엔드는 `api-spec.md`의 request/response 형식을 따른다.
+- `test-plan.md`의 테스트 케이스와 요구사항 ID를 기준으로 검증한다.
+- 실제 개인정보를 저장하지 않는다.
+- `user_code7`은 테스트용 7자리 이용자 식별 코드로만 사용한다.
+
+## 기술 스택
+
+- Backend: Spring Boot, JDK 25, Gradle, JPA, Spring Security
+- Frontend: Next.js, TypeScript
+- Database: MariaDB
+- DB 확인 도구: DBeaver
+- Test: JUnit 5, MockMvc
+
+## 화면 구성
+
+웹은 총 2페이지로 구성한다.
+
+- `/`: 이용자 페이지
+- `/admin`: 관리자 대시보드 페이지
+
+## DB 규칙
+
+- DBMS는 MariaDB를 기준으로 구현한다.
+- DB 접속 URL은 `jdbc:mariadb://192.100.50.100:33307/test`를 사용한다.
+- 제공된 `test` 데이터베이스 안에 프로젝트용 테이블을 생성한다.
+- 테이블명은 다른 사용자/프로젝트와 충돌하지 않도록 `library_` 접두사를 사용한다.
+- DBeaver에서는 생성된 테이블과 목데이터를 확인한다.
+- 테이블은 Spring Boot JPA Entity와 `ddl-auto` 설정으로 생성한다.
+- 외부 도서 데이터는 사용하지 않는다.
+- 개발 환경에서는 앱 시작 시 목데이터를 자동 생성한다.
+- 목데이터는 `database-schema.md`와 `test-plan.md`의 검증 조건을 만족해야 한다.
+- 일반 이용자는 사전 회원가입하지 않는다.
+- `library_users`는 첫 대여 시 자동 생성되는 이용자 상태 테이블이다.
+- 대여 시 입력한 이름과 `user_code7` 기준으로 대여 기록을 남긴다.
+
+## API 규칙
+
+- 모든 API는 `api-spec.md`를 따른다.
+- 요청/응답 필드명을 임의로 변경하지 않는다.
+- 실패 응답은 `errorCode`, `message`, `requirementId`를 포함한다.
+- 예외 처리는 `requirements.md`의 EX-ID를 기준으로 한다.
+
+## 구현 순서
+
+1. MariaDB 연결 설정
+2. DB schema 및 Spring Boot Entity 구현
+3. 목데이터 초기화 구현
+4. 도서 목록/검색/상세 API 구현
+5. 대여/반납 API 구현
+6. 관리자 로그인/API 구현
+7. 관리자 대시보드 API 구현
+8. Next.js 이용자 페이지 구현
+9. Next.js 관리자 페이지 구현
+10. API 테스트 작성
+11. 요구사항 ID 기준 최종 검증
+
+## 보안 규칙
+
+- 관리자 비밀번호는 BCrypt로 해시 저장한다.
+- 실제 주민번호 또는 민감 개인정보를 저장하지 않는다.
+- 관리자 화면의 `user_code7`은 앞 4자리 + `***`로 마스킹한다.
+- 관리자 API는 인증된 관리자만 접근할 수 있게 구현한다.
