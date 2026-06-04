@@ -7,6 +7,7 @@ import Modal from "@/components/shared/Modal";
 
 interface Props {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 type Step = "input" | "list" | "done";
@@ -15,7 +16,7 @@ function maskCode(code: string) {
   return code.length >= 4 ? code.substring(0, 4) + "***" : code;
 }
 
-export default function ReturnModal({ onClose }: Props) {
+export default function ReturnModal({ onClose, onSuccess }: Props) {
   const [step, setStep] = useState<Step>("input");
   const [userName, setUserName] = useState("");
   const [userCode7, setUserCode7] = useState("");
@@ -150,7 +151,7 @@ export default function ReturnModal({ onClose }: Props) {
           <p className="text-lg font-bold text-gray-900">반납이 완료되었습니다!</p>
           <p className="text-sm text-gray-600">{doneTitle}</p>
           <button
-            onClick={onClose}
+            onClick={() => { onSuccess?.(); onClose(); }}
             className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium hover:bg-green-700"
           >
             확인

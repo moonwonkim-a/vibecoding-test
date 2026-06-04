@@ -288,12 +288,11 @@ public class AdminService {
 
     @Transactional
     public BlacklistReleaseResponseDto releaseBlacklist(BlacklistReleaseRequestDto request) {
-        LibraryUser user = userRepository.findById(request.getUserCode7())
+        LibraryUser user = userRepository.findAllBlacklisted().stream()
+                .filter(u -> u.getUserName().equals(request.getUserName())
+                          && maskUserCode7(u.getUserCode7()).equals(request.getUserCode7Masked()))
+                .findFirst()
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
-
-        if (!user.getUserName().equals(request.getUserName())) {
-            throw BusinessException.of(ErrorCode.EX_015);
-        }
 
         user.releaseBlacklist();
 

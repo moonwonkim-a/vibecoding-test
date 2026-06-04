@@ -231,7 +231,7 @@ export interface BlacklistUser {
 // 불량 해제
 export interface BlacklistReleaseRequest {
   userName: string;
-  userCode7: string;
+  userCode7Masked: string;
 }
 
 export interface BlacklistReleaseResponse {

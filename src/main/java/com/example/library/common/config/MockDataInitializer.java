@@ -12,8 +12,8 @@ import com.example.library.user.entity.LibraryBlacklistReason;
 import com.example.library.user.entity.LibraryUser;
 import com.example.library.user.repository.LibraryBlacklistReasonRepository;
 import com.example.library.user.repository.LibraryUserRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +31,7 @@ public class MockDataInitializer implements CommandLineRunner {
     private final LibraryBlacklistReasonRepository blacklistReasonRepository;
     private final LibraryRentRecordRepository rentRecordRepository;
     private final LibraryAdminRepository adminRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public MockDataInitializer(
             LibraryBookInfoRepository bookInfoRepository,
@@ -38,7 +39,8 @@ public class MockDataInitializer implements CommandLineRunner {
             LibraryUserRepository userRepository,
             LibraryBlacklistReasonRepository blacklistReasonRepository,
             LibraryRentRecordRepository rentRecordRepository,
-            LibraryAdminRepository adminRepository
+            LibraryAdminRepository adminRepository,
+            JdbcTemplate jdbcTemplate
     ) {
         this.bookInfoRepository = bookInfoRepository;
         this.inventoryRepository = inventoryRepository;
@@ -46,11 +48,13 @@ public class MockDataInitializer implements CommandLineRunner {
         this.blacklistReasonRepository = blacklistReasonRepository;
         this.rentRecordRepository = rentRecordRepository;
         this.adminRepository = adminRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
+        fixTableCharsets();
+
         if (bookInfoRepository.count() > 0) {
             return;
         }
@@ -60,6 +64,32 @@ public class MockDataInitializer implements CommandLineRunner {
         List<LibraryUser> users = seedUsers();
         seedAdmin();
         seedRentRecords(users);
+    }
+
+    private void fixTableCharsets() {
+        List<String> alterSqls = List.of(
+            "ALTER TABLE library_blacklist_reasons MODIFY COLUMN reason_label VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_blacklist_reasons MODIFY COLUMN description VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+            "ALTER TABLE library_book_info MODIFY COLUMN title VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_book_info MODIFY COLUMN author VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_book_info MODIFY COLUMN publisher VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_book_info MODIFY COLUMN category VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_users MODIFY COLUMN user_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_users MODIFY COLUMN blacklist_memo VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+            "ALTER TABLE library_rent_records MODIFY COLUMN user_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL",
+            "ALTER TABLE library_admins MODIFY COLUMN admin_name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL"
+        );
+        jdbcTemplate.execute((java.sql.Connection conn) -> {
+            try (java.sql.Statement stmt = conn.createStatement()) {
+                for (String sql : alterSqls) {
+                    try {
+                        stmt.execute(sql);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            return null;
+        });
     }
 
     private void seedBlacklistReasons() {
