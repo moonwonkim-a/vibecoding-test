@@ -107,7 +107,7 @@ spring.jpa.show-sql=true
 - 실제 주민번호를 저장하지 않는다.
 - 사전 목데이터 이용자가 없어도 신규 대여 요청 시 자동 생성할 수 있다.
 - 동일 `user_code7`이 이미 있으면 기존 이용자 상태를 사용한다.
-- 이미 존재하는 `user_code7`에 다른 이름이 입력되면 서버 정책에 따라 기존 이름을 유지하거나 검증 오류로 처리한다. 기본 권장안은 검증 오류 처리이다.
+- 이미 존재하는 `user_code7`에 다른 이름이 입력되면 서버 정책에 따라 기존 이름을 유지하거나 검증 오류로 처리한다. 기본 권장안은 검증 오류 처리이며, 이 경우 `EX-015` 에러코드로 응답한다 (`requirements.md` 참고).
 - 관리자 화면에서는 앞 4자리 + `***`로 마스킹한다.
 - 현재 대여 권수는 저장하지 않고 미반납 `rent_records` 개수로 계산한다.
 - 불량 이용자 지정/해제 상태는 이 테이블에 저장한다.
@@ -127,14 +127,17 @@ spring.jpa.show-sql=true
 | due_date | DATE | NOT NULL | 반납 기한 |
 | return_date | DATE | NULL | 실제 반납일 |
 | is_overdue | BOOLEAN | DEFAULT FALSE | 연체 여부 |
+| overdue_days | INT | DEFAULT 0 | 연체 일수 |
 
 규칙:
 
 - 반납 전 기록은 `return_date=null`이다.
 - 반납 기한은 `rent_date + 21일`이다.
 - 대여 기록은 삭제하지 않는다.
-- 연체 여부는 반납 시 갱신한다.
+- 연체 여부(`is_overdue`)와 연체 일수(`overdue_days`)는 반납 시 함께 갱신한다.
+- `overdue_days`는 반납 시 `return_date - due_date` 일수로 계산하여 저장한다. 연체가 아니면 0으로 저장한다.
 - 현재 대여 중 도서는 `return_date is null` 조건으로 조회한다.
+- 현재 대여 중인 도서의 연체 여부 및 연체 일수는 조회 시점 기준으로 실시간 계산하여 응답한다 (DB 저장 없음).
 
 ## 8. library_blacklist_reasons
 
@@ -243,5 +246,14 @@ spring.jpa.show-sql=true
 ## 13. 삭제 정책
 
 - 대여 중인 재고는 삭제할 수 없다.
-- 도서 마스터 삭제는 해당 ISBN의 모든 재고가 대여 가능 상태일 때만 허용한다.
-- 대여 기록은 삭제하지 않는다.
+- 도서 마스터 삭제는 해당 ISBN의 모든 재고가 대여 가능 상태(`available=true`)일 때만 허용한다.
+- 도서 마스터(`library_book_info`) 삭제 시 해당 ISBN의 모든 실물 재고(`library_book_inventory`)를 함께 삭제한다. (Cascade Delete)
+- 대여 기록은 삭제하지 않는다. 도서 마스터 삭제 후에도 기존 `library_rent_records`는 보존한다.
+- 실물 재고 단건 삭제 시 해당 재고가 대여 중(`available=false`)이면 삭제를 차단한다.
+
+## 14. 자동 설정 컬럼 정책
+
+- `library_admins.created_at`: JPA `@CreationTimestamp` 또는 DB `DEFAULT CURRENT_TIMESTAMP`로 자동 설정한다.
+- `library_users.blacklisted_at`: 불량 지정 시점에 서버에서 `LocalDateTime.now()`로 설정한다. 해제 시 `null`로 초기화한다.
+- `library_rent_records.rent_date`: 대여 요청 시점의 서버 날짜(`LocalDate.now()`)로 설정한다.
+- `library_rent_records.due_date`: `rent_date + 21일`로 서버에서 자동 계산하여 저장한다.
