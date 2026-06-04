@@ -51,6 +51,9 @@ public class LibraryRentRecord {
     @Column(name = "is_overdue", nullable = false)
     private boolean overdue = false;
 
+    @Column(name = "overdue_days", nullable = false)
+    private int overdueDays = 0;
+
     protected LibraryRentRecord() {
     }
 
@@ -73,4 +76,26 @@ public class LibraryRentRecord {
         this.returnDate = returnDate;
         this.overdue = overdue;
     }
+
+    public void markReturned(LocalDate returnDate) {
+        this.returnDate = returnDate;
+        if (returnDate.isAfter(this.dueDate)) {
+            this.overdue = true;
+            this.overdueDays = (int) (returnDate.toEpochDay() - this.dueDate.toEpochDay());
+        } else {
+            this.overdue = false;
+            this.overdueDays = 0;
+        }
+    }
+
+    public Long getRentId() { return rentId; }
+    public LibraryBookInventory getInventory() { return inventory; }
+    public LibraryBookInfo getBookInfo() { return bookInfo; }
+    public LibraryUser getUser() { return user; }
+    public String getUserName() { return userName; }
+    public LocalDate getRentDate() { return rentDate; }
+    public LocalDate getDueDate() { return dueDate; }
+    public LocalDate getReturnDate() { return returnDate; }
+    public boolean isOverdue() { return overdue; }
+    public int getOverdueDays() { return overdueDays; }
 }

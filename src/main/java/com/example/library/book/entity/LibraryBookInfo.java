@@ -71,4 +71,8 @@ public class LibraryBookInfo {
     public Integer getRentCount() {
         return rentCount;
     }
+
+    public void incrementRentCount() {
+        this.rentCount++;
+    }
 }

@@ -3,6 +3,7 @@ package com.example.library.book.repository;
 import com.example.library.book.dto.BookDetailDto;
 import com.example.library.book.dto.BookListItemDto;
 import com.example.library.book.dto.BookListResponseDto;
+import com.example.library.book.dto.RankingItemDto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -134,6 +135,41 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
                 ((Number) row[8]).intValue(),
                 availableCount > 0
         );
+    }
+
+    @Override
+    public List<RankingItemDto> findRankings(String category) {
+        String whereClause = (category != null && !category.isBlank())
+                ? " WHERE b.category = :category" : "";
+
+        String sql = """
+                SELECT b.isbn, b.title, b.author, b.category, b.rent_count
+                FROM library_book_info b
+                """ + whereClause + """
+                ORDER BY b.rent_count DESC
+                LIMIT 10
+                """;
+
+        Query query = entityManager.createNativeQuery(sql);
+        if (category != null && !category.isBlank()) {
+            query.setParameter("category", category);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = query.getResultList();
+        List<RankingItemDto> result = new java.util.ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] row = rows.get(i);
+            result.add(new RankingItemDto(
+                    i + 1,
+                    (String) row[0],
+                    (String) row[1],
+                    (String) row[2],
+                    (String) row[3],
+                    ((Number) row[4]).intValue()
+            ));
+        }
+        return result;
     }
 
     private BookDetailDto toBookDetail(Object[] row) {
