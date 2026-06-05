@@ -3,7 +3,6 @@ import {
   AdminBookAddRequest,
   AdminBookAddResponse,
   AdminCurrentRental,
-  AdminInventory,
   AdminLoginRequest,
   AdminLoginResponse,
   ApiResponse,
@@ -23,7 +22,7 @@ import {
   ReturnCandidate,
   ReturnRequest,
   ReturnResponse,
-  ReturnHistoryItem,
+  UserHistoryResponse,
 } from "./types";
 
 const BASE_URL = "http://localhost:8080/api";
@@ -126,12 +125,6 @@ export function deleteAdminBook(isbn: string): Promise<ApiResponse<{ isbn: strin
   return request<{ isbn: string }>(`/admin/books/${isbn}`, { method: "DELETE" });
 }
 
-export function getAdminInventories(
-  isbn: string
-): Promise<ApiResponse<AdminInventory[]>> {
-  return request<AdminInventory[]>(`/admin/books/${isbn}/inventories`);
-}
-
 export function deleteAdminInventory(
   inventoryId: number
 ): Promise<ApiResponse<{ inventoryId: number }>> {
@@ -150,8 +143,12 @@ export function getCurrentRentals(params?: {
   return request<AdminCurrentRental[]>(`/admin/rentals/current?${query}`);
 }
 
-export function getReturnHistory(): Promise<ApiResponse<ReturnHistoryItem[]>> {
-  return request<ReturnHistoryItem[]>(`/admin/return-history`);
+export function getUserHistory(
+  userName: string,
+  userCode7: string
+): Promise<ApiResponse<UserHistoryResponse>> {
+  const query = new URLSearchParams({ userName, userCode7 });
+  return request<UserHistoryResponse>(`/admin/users/history?${query}`);
 }
 
 export function getBlacklistReasons(): Promise<ApiResponse<BlacklistReason[]>> {

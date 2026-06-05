@@ -17,10 +17,16 @@ export default function AdminBlacklistPanel() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleRelease = async (user: BlacklistUser) => {
+  const handleRelease = async (user: BlacklistUser, userCode7Full: string) => {
     if (!confirm(`${user.userName} 이용자의 불량 상태를 해제하시겠습니까?`)) return;
 
-    const res = await releaseBlacklist({ userName: user.userName, userCode7Masked: user.userCode7Masked });
+    const code = prompt("이용자 식별 코드를 입력하세요 (7자리):", "");
+    if (!code || !/^\d{7}$/.test(code)) {
+      alert("올바른 식별 코드를 입력해 주세요.");
+      return;
+    }
+
+    const res = await releaseBlacklist({ userName: user.userName, userCode7: code });
     if (res.success) {
       fetchUsers();
     } else {
@@ -62,7 +68,7 @@ export default function AdminBlacklistPanel() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => handleRelease(u)}
+                      onClick={() => handleRelease(u, u.userCode7Masked)}
                       className="text-blue-600 hover:underline text-xs font-medium"
                     >
                       해제
