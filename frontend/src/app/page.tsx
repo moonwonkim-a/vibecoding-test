@@ -8,6 +8,7 @@ import ReturnModal from "@/components/rental/ReturnModal";
 export default function UserPage() {
   const [showReturn, setShowReturn] = useState(false);
   const [activeTab, setActiveTab] = useState<"books" | "ranking">("books");
+  const [refreshSignal, setRefreshSignal] = useState(0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,12 +64,17 @@ export default function UserPage() {
 
       {/* 본문 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === "books" && <BookList />}
+        {activeTab === "books" && <BookList refreshSignal={refreshSignal} />}
         {activeTab === "ranking" && <RankingSection />}
       </main>
 
       {/* 반납 모달 */}
-      {showReturn && <ReturnModal onClose={() => setShowReturn(false)} />}
+      {showReturn && (
+        <ReturnModal
+          onClose={() => setShowReturn(false)}
+          onSuccess={() => setRefreshSignal((s) => s + 1)}
+        />
+      )}
     </div>
   );
 }

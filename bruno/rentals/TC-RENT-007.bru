@@ -1,0 +1,41 @@
+meta {
+  name: TC-RENT-007 대여 기록 생성 확인
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/rentals
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isbn": "{{availableIsbn}}",
+    "userName": "{{userNormalName}}",
+    "userCode7": "{{userNormalCode}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.rentDate: isDefined
+  res.body.data.dueDate: isDefined
+}
+
+tests {
+  test("dueDate가 rentDate + 21일이어야 한다", function() {
+    const data = res.getBody().data;
+    const rentDate = new Date(data.rentDate);
+    const dueDate = new Date(data.dueDate);
+    const diffDays = (dueDate - rentDate) / (1000 * 60 * 60 * 24);
+    expect(diffDays).to.eq(21);
+  });
+}
+
+docs {
+  TC-RENT-007 | FR-RENT-008 | 대여 기록 생성 확인
+  기대 결과: due_date = rent_date + 21일
+}

@@ -4,21 +4,23 @@
 
 이 문서는 요구사항 ID 기준으로 API와 주요 화면 동작을 검증하기 위한 테스트 계획이다.
 
-테스트는 Spring Boot API 테스트를 우선한다.
+테스트는 API 테스트 프로그램을 이용한 블랙박스 테스트로 수행한다. 실행 중인 Spring Boot 서버에 실제 HTTP 요청을 보내 응답을 검증한다.
 
-권장 도구:
+테스트 도구:
 
-- JUnit 5
-- MockMvc
-- 필요 시 Postman, Bruno, Insomnia 중 하나
+- Bruno (테스트 정의는 `bruno/` 컬렉션의 `.bru` 파일로 작성, TC ID와 1:1 매칭)
+- 실행: Bruno MCP 또는 Bruno CLI (`bru run`) — 자동화 절차는 `AGENT-TEST-WORKFLOW.md` 참조
+- 테스트 결과는 `test-results/`에 실행 회차별로 기록한다 (`INDEX.md` 요약 + 월별 상세)
 
 ## 2. 테스트 원칙
 
 - 모든 테스트는 요구사항 ID와 연결한다.
 - 성공 케이스와 예외 케이스를 모두 검증한다.
-- 목데이터는 `database-schema.md`의 초기 목데이터 정책을 따른다.
+- 목데이터는 `database-schema.md`의 초기 목데이터 정책을 따른다. 테스트 실행 전 서버를 재시작하면 `data.sql`이 자동으로 재실행되어 초기 상태로 리셋된다.
 - 실제 개인정보를 테스트 데이터로 사용하지 않는다.
 - `user_code7`은 테스트용 7자리 식별 코드만 사용한다.
+- 검증은 API 응답을 기준으로 한다. 기대 결과가 DB 저장 값인 TC(예: `rent_date` 기록, `return_date` 저장, BCrypt 해시)는 후속 조회 API 또는 test 프로파일 한정 test-support 엔드포인트로 확인한다.
+- 동시성 검증(TC-RENT-013)은 병렬 요청 스크립트로 수행한다 (`AGENT-TEST-WORKFLOW.md` 6.3절).
 
 ## 3. 도서 목록 테스트
 
@@ -113,10 +115,10 @@
 
 | TC ID | 요구사항 ID | 테스트 내용 | 기대 결과 |
 |---|---|---|---|
-| TC-HISTORY-001 | FR-ADMIN-006 | 이용자 이력 조회 | 전체 대여/반납 이력 반환 |
-| TC-HISTORY-002 | FR-ADMIN-007 | 이력 필드 확인 | 도서명, 대여일, 반납 기한, 반납일, 연체 정보 포함 |
-| TC-HISTORY-003 | EX-013 | 대여 이력 없는 이용자 조회 | 빈 목록과 안내 메시지 |
-| TC-HISTORY-004 | EX-005 | 존재하지 않는 이용자 조회 | 조회 실패 |
+| TC-HISTORY-001 | FR-ADMIN-006 | 전체 반납 이력 조회 | 모든 도서의 반납 완료 기록 반환 (반납일 최신순) |
+| TC-HISTORY-002 | FR-ADMIN-007 | 이력 필드 확인 | 도서명, 이용자명, 마스킹 코드, 대여일, 반납 기한, 반납일, 연체 정보 포함 |
+| TC-HISTORY-003 | FR-ADMIN-007 | 연체 반납 항목 표시 | 연체 반납 건의 overdue=true, overdueDays > 0 |
+| TC-HISTORY-004 | FR-ADMIN-008 | 행 단위 불량 지정 가능 여부 | 미불량 이용자 항목은 canBlacklist=true |
 | TC-BLACKLIST-001 | FR-ADMIN-009, EX-012 | 사유 미선택 불량 지정 | 저장 차단 |
 | TC-BLACKLIST-002 | FR-ADMIN-010 | ETC 선택 시 메모 저장 | memo 저장 |
 | TC-BLACKLIST-003 | FR-ADMIN-011 | 정상 불량 지정 | is_blacklisted true |

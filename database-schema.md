@@ -61,6 +61,7 @@ spring.jpa.show-sql=true
 | category | VARCHAR(100) | NOT NULL | 카테고리 |
 | price | INT | NOT NULL | 가격 |
 | rent_count | INT | DEFAULT 0 | 누적 대여 횟수 |
+| del_yn | CHAR(1) | DEFAULT 'N', NOT NULL | 삭제 여부 (Soft Delete) |
 
 규칙:
 
@@ -77,6 +78,7 @@ spring.jpa.show-sql=true
 | isbn | VARCHAR(13) | FK -> library_book_info.isbn | 도서 마스터 ISBN |
 | available | BOOLEAN | DEFAULT TRUE | 대여 가능 여부 |
 | rent_date | DATE | NULL | 현재 대여 시작일 |
+| del_yn | CHAR(1) | DEFAULT 'N', NOT NULL | 삭제 여부 (Soft Delete) |
 
 규칙:
 
@@ -190,7 +192,11 @@ spring.jpa.show-sql=true
 
 외부 도서 데이터는 사용하지 않는다.
 
-개발 환경에서 애플리케이션 시작 시 목데이터를 자동 생성한다.
+목데이터는 `src/main/resources/data.sql`로 관리한다. 앱 시작 시 `spring.sql.init.mode=always` 설정에 의해 자동 실행된다.
+
+- **`data.sql`**: 도서, 재고, 이용자, 대여 기록, 불량 사유 등 모든 초기 데이터를 담는다.
+- **`MockDataInitializer`**: 관리자 계정(`admin`) 생성만 담당한다.
+- **리셋 동작**: 서버 재시작 시 `data.sql`의 리셋 섹션이 먼저 실행되어 테스트 중 변경된 상태(대여, 불량 지정, 소프트 삭제 등)를 초기 상태로 복원한다.
 
 필수 목데이터:
 
@@ -230,12 +236,12 @@ spring.jpa.show-sql=true
 
 | user_name | user_code7 | 상태 |
 |---|---|---|
-| 홍길동 | 9001151 | 정상, 현재 대여 0권 |
+| 홍길동 | 9001151 | 정상, 현재 대여 0권 (반납 이력 있음) |
 | 김민수 | 0102033 | 정상, 현재 대여 2권 |
 | 이영희 | 9507072 | 불량 이용자 |
-| 박서준 | 8812121 | 연체 이력 보유 |
+| 박서준 | 8812121 | 현재 연체 중 (1건, inv_id=6, 30일 전 대여) |
 | 최유진 | 0203044 | 현재 대여 1권 |
-| 정하늘 | 9901012 | 대여 이력 없음 |
+| 정하늘 | 9901012 | 현재 대여 0권 (반납 이력 1건 있음) |
 
 신규 이용자 자동 생성 테스트:
 
@@ -245,11 +251,14 @@ spring.jpa.show-sql=true
 
 ## 13. 삭제 정책
 
-- 대여 중인 재고는 삭제할 수 없다.
-- 도서 마스터 삭제는 해당 ISBN의 모든 재고가 대여 가능 상태(`available=true`)일 때만 허용한다.
-- 도서 마스터(`library_book_info`) 삭제 시 해당 ISBN의 모든 실물 재고(`library_book_inventory`)를 함께 삭제한다. (Cascade Delete)
-- 대여 기록은 삭제하지 않는다. 도서 마스터 삭제 후에도 기존 `library_rent_records`는 보존한다.
-- 실물 재고 단건 삭제 시 해당 재고가 대여 중(`available=false`)이면 삭제를 차단한다.
+물리 삭제(DELETE) 대신 **Soft Delete** 방식을 사용한다. `del_yn` 컬럼 값을 `'Y'`로 변경하여 논리적으로 삭제 처리한다.
+
+- 대여 중인 재고(`available=false`)는 삭제할 수 없다 (EX-007).
+- 대여 중인 재고가 1건이라도 있는 도서 마스터는 삭제할 수 없다 (EX-007).
+- 도서 마스터 삭제 시: 해당 ISBN의 모든 활성 재고(`del_yn='N'`)의 `del_yn`을 `'Y'`로 변경하고, 도서 마스터의 `del_yn`도 `'Y'`로 변경한다.
+- 실물 재고 단건 삭제 시: 해당 재고의 `del_yn`을 `'Y'`로 변경한다.
+- 대여 기록(`library_rent_records`)은 물리 삭제하지 않는다. 도서/재고 삭제 후에도 기존 기록은 보존한다.
+- `del_yn='Y'`인 도서 및 재고는 목록 조회, 재고 할당 등 모든 일반 조회에서 제외된다.
 
 ## 14. 자동 설정 컬럼 정책
 

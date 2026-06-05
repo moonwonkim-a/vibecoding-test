@@ -1,0 +1,31 @@
+meta {
+  name: TC-RETURN-007 반납 시 동일 user_code7에 다른 이름 입력
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/returns
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "rentId": {{returnRentId}},
+    "userName": "이름불일치",
+    "userCode7": "{{userOneRentCode}}"
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.success: eq false
+  res.body.errorCode: eq EX-015
+}
+
+docs {
+  TC-RETURN-007 | EX-015 | 반납 시 동일 user_code7에 다른 이름 입력
+  기대 결과: 409 응답, errorCode=EX-015, 반납 차단
+  전제 조건: {{userOneRentCode}}(최유진) 이용자의 현재 대여 rentId 필요
+}

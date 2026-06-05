@@ -16,6 +16,9 @@ import java.util.Optional;
 @Repository
 public class BookQueryRepositoryImpl implements BookQueryRepository {
 
+    private static final String ACTIVE_BOOK_FILTER = "(b.del_yn IS NULL OR b.del_yn = 'N')";
+    private static final String ACTIVE_INVENTORY_JOIN = "(i.del_yn IS NULL OR i.del_yn = 'N')";
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -26,8 +29,7 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
 
         String baseSql = """
                 FROM library_book_info b
-                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn
-                """ + whereClause + """
+                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND """ + ACTIVE_INVENTORY_JOIN + whereClause + """
                 GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price, b.rent_count
                 """;
 
@@ -40,11 +42,12 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
 
         String countSql = "SELECT COUNT(*) FROM (SELECT b.isbn " + baseSql + ") t";
 
+        int safePage = Math.max(0, page);
         Query listQuery = entityManager.createNativeQuery(listSql);
         Query countQuery = entityManager.createNativeQuery(countSql);
         applyKeywordParam(listQuery, keyword);
         applyKeywordParam(countQuery, keyword);
-        listQuery.setFirstResult(page * size);
+        listQuery.setFirstResult(safePage * size);
         listQuery.setMaxResults(size);
 
         @SuppressWarnings("unchecked")
@@ -67,13 +70,13 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
                        COUNT(i.inventory_id) AS total_count,
                        SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count
                 FROM library_book_info b
-                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn
-                WHERE b.isbn = :isbn
+                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND """ + ACTIVE_INVENTORY_JOIN + """
+                WHERE b.isbn = ? AND """ + ACTIVE_BOOK_FILTER + """
                 GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price
                 """;
 
         Query query = entityManager.createNativeQuery(detailSql);
-        query.setParameter("isbn", isbn);
+        query.setParameter(1, isbn);
         @SuppressWarnings("unchecked")
         List<Object[]> rows = query.getResultList();
 
@@ -84,18 +87,22 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
     }
 
     private String buildWhereClause(String keyword, String filter) {
+        StringBuilder clause = new StringBuilder(" WHERE ").append(ACTIVE_BOOK_FILTER);
+
         if (keyword == null || keyword.isBlank()) {
-            return "";
+            return clause.toString();
         }
 
         String normalizedFilter = Optional.ofNullable(filter).orElse("").toLowerCase(Locale.ROOT);
-        return switch (normalizedFilter) {
-            case "title" -> " WHERE LOWER(b.title) LIKE LOWER(:keyword)";
-            case "author" -> " WHERE LOWER(b.author) LIKE LOWER(:keyword)";
-            case "category" -> " WHERE LOWER(b.category) LIKE LOWER(:keyword)";
-            case "publisher" -> " WHERE LOWER(b.publisher) LIKE LOWER(:keyword)";
-            default -> " WHERE (LOWER(b.title) LIKE LOWER(:keyword) OR LOWER(b.author) LIKE LOWER(:keyword) OR LOWER(b.category) LIKE LOWER(:keyword) OR LOWER(b.publisher) LIKE LOWER(:keyword))";
+        String keywordCondition = switch (normalizedFilter) {
+            case "title" -> "LOWER(b.title) LIKE LOWER(:keyword)";
+            case "author" -> "LOWER(b.author) LIKE LOWER(:keyword)";
+            case "category" -> "LOWER(b.category) LIKE LOWER(:keyword)";
+            case "publisher" -> "LOWER(b.publisher) LIKE LOWER(:keyword)";
+            default -> "(LOWER(b.title) LIKE LOWER(:keyword) OR LOWER(b.author) LIKE LOWER(:keyword) OR LOWER(b.category) LIKE LOWER(:keyword) OR LOWER(b.publisher) LIKE LOWER(:keyword))";
         };
+
+        return clause.append(" AND ").append(keywordCondition).toString();
     }
 
     private String buildOrderByClause(String sort, String direction) {
@@ -120,9 +127,13 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
         }
     }
 
+    private long toLongOrZero(Object value) {
+        return value == null ? 0L : ((Number) value).longValue();
+    }
+
     private BookListItemDto toBookListItem(Object[] row) {
-        long totalCount = ((Number) row[6]).longValue();
-        long availableCount = ((Number) row[7]).longValue();
+        long totalCount = toLongOrZero(row[6]);
+        long availableCount = toLongOrZero(row[7]);
         return new BookListItemDto(
                 (String) row[0],
                 (String) row[1],
@@ -139,20 +150,17 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
 
     @Override
     public List<RankingItemDto> findRankings(String category) {
-        String whereClause = (category != null && !category.isBlank())
-                ? " WHERE b.category = :category" : "";
+        boolean hasCategory = category != null && !category.isBlank();
+        String whereClause = " WHERE " + ACTIVE_BOOK_FILTER + (hasCategory ? " AND b.category = ?" : "");
 
-        String sql = """
-                SELECT b.isbn, b.title, b.author, b.category, b.rent_count
-                FROM library_book_info b
-                """ + whereClause + """
-                ORDER BY b.rent_count DESC
-                LIMIT 10
-                """;
+        String sql = "SELECT b.isbn, b.title, b.author, b.category, b.rent_count"
+                + " FROM library_book_info b"
+                + whereClause
+                + " ORDER BY b.rent_count DESC LIMIT 10";
 
         Query query = entityManager.createNativeQuery(sql);
-        if (category != null && !category.isBlank()) {
-            query.setParameter("category", category);
+        if (hasCategory) {
+            query.setParameter(1, category);
         }
 
         @SuppressWarnings("unchecked")
@@ -173,8 +181,8 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
     }
 
     private BookDetailDto toBookDetail(Object[] row) {
-        long totalCount = ((Number) row[6]).longValue();
-        long availableCount = ((Number) row[7]).longValue();
+        long totalCount = toLongOrZero(row[6]);
+        long availableCount = toLongOrZero(row[7]);
         return new BookDetailDto(
                 (String) row[0],
                 (String) row[1],

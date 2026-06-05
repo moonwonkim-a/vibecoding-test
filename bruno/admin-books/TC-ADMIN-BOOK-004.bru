@@ -1,0 +1,34 @@
+meta {
+  name: TC-ADMIN-BOOK-004 잘못된 ISBN 추가
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/admin/books
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isbn": "123",
+    "title": "잘못된 ISBN 도서",
+    "author": "테스트",
+    "publisher": "테스트",
+    "category": "테스트",
+    "price": 10000,
+    "quantity": 1
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.success: eq false
+}
+
+docs {
+  TC-ADMIN-BOOK-004 | EX-010 | 잘못된 ISBN 추가
+  기대 결과: 400 응답, 저장 차단 (ISBN은 13자리여야 함)
+  검증: 3자리 ISBN으로 추가 시도
+}

@@ -1,0 +1,31 @@
+meta {
+  name: TC-ADMIN-BOOK-006 대여 중 재고 삭제
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/admin/inventories/{{rentedInventoryId}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const res = await axios.get(`${bru.getEnvVar("baseUrl")}/admin/rentals/current`);
+  const rentals = res.data.data;
+  if (rentals && rentals.length > 0) {
+    bru.setVar("rentedInventoryId", rentals[0].inventoryId);
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.success: eq false
+  res.body.errorCode: eq EX-007
+}
+
+docs {
+  TC-ADMIN-BOOK-006 | EX-007 | 대여 중 재고 삭제
+  기대 결과: 409, errorCode=EX-007 (삭제 차단)
+  전제 조건: pre-request script가 GET /admin/rentals/current에서 rented inventoryId를 자동 캡처
+}

@@ -1,0 +1,36 @@
+meta {
+  name: TC-HISTORY-001 전체 반납 이력 조회
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/admin/return-history
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data: isDefined
+}
+
+tests {
+  test("반납 이력이 1건 이상 있어야 한다", function() {
+    expect(res.getBody().data.length).to.be.gte(1);
+  });
+  test("반납일 최신순으로 정렬되어야 한다", function() {
+    const data = res.getBody().data;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i-1].returnDate && data[i].returnDate) {
+        expect(data[i-1].returnDate >= data[i].returnDate).to.eq(true);
+      }
+    }
+  });
+}
+
+docs {
+  TC-HISTORY-001 | FR-ADMIN-006 | 전체 반납 이력 조회
+  기대 결과: 모든 도서의 반납 완료 기록 반환 (반납일 최신순)
+}

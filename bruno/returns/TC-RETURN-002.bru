@@ -1,0 +1,34 @@
+meta {
+  name: TC-RETURN-002 대여 중 도서가 없는 이용자 조회
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/returns/candidates
+  body: none
+  auth: none
+}
+
+params:query {
+  userName: {{userNormalName}}
+  userCode7: {{userNormalCode}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+}
+
+tests {
+  test("대여 중인 도서가 없으면 빈 배열을 반환해야 한다", function() {
+    expect(res.getBody().data.length).to.eq(0);
+  });
+}
+
+docs {
+  TC-RETURN-002 | FR-RETURN-002 | 대여 중 도서가 없는 이용자 조회
+  기대 결과: 빈 목록 반환
+  전제 조건: 홍길동(9001151) - 현재 대여 0권 (목데이터 초기 상태)
+  주의: TC-RENT-005~008 실행 후라면 대여 기록이 있어 실패할 수 있음. 목데이터 초기화 필요.
+}

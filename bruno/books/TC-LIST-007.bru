@@ -1,0 +1,34 @@
+meta {
+  name: TC-LIST-007 검색 결과 없음
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/books
+  body: none
+  auth: none
+}
+
+params:query {
+  keyword: 절대존재하지않는검색어XYZ99999
+  filter: title
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.totalElements: eq 0
+}
+
+tests {
+  test("검색 결과가 없을 때 빈 배열을 반환해야 한다", function() {
+    expect(res.getBody().data.content.length).to.eq(0);
+  });
+}
+
+docs {
+  TC-LIST-007 | EX-006 | 검색 결과 없음
+  기대 결과: 빈 목록 반환, totalElements=0
+  참고: EX-006은 HTTP 200으로 응답 (에러코드 아님)
+}

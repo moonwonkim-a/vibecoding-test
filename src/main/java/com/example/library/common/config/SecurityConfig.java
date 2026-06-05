@@ -1,5 +1,6 @@
 package com.example.library.common.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,7 +16,7 @@ public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(@Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfigurationSource) {
         this.corsConfigurationSource = corsConfigurationSource;
     }
 

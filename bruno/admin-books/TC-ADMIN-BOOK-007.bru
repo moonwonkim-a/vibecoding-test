@@ -1,0 +1,23 @@
+meta {
+  name: TC-ADMIN-BOOK-007 대여 중 재고가 있는 도서 마스터 삭제
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/admin/books/{{unavailableIsbn}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 409
+  res.body.success: eq false
+  res.body.errorCode: eq EX-007
+}
+
+docs {
+  TC-ADMIN-BOOK-007 | EX-007 | 대여 중 재고가 있는 도서 마스터 삭제
+  기대 결과: 409, errorCode=EX-007 (삭제 차단)
+  전제 조건: {{unavailableIsbn}} 도서에 대여 중인 재고 존재 (목데이터 기준: 9780000000000)
+}

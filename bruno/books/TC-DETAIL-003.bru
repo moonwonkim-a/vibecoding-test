@@ -1,0 +1,24 @@
+meta {
+  name: TC-DETAIL-003 재고 0권 도서 상세
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/books/{{unavailableIsbn}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.availableCount: eq 0
+  res.body.data.rentAvailable: eq false
+}
+
+docs {
+  TC-DETAIL-003 | FR-DETAIL-004 | 재고 0권 도서 상세
+  기대 결과: rentAvailable=false
+  전제 조건: {{unavailableIsbn}} 도서의 모든 재고가 대여 중 (목데이터 기준: 9780000000000)
+}

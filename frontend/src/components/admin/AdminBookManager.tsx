@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { AdminBook, AdminBookAddRequest } from "@/lib/types";
-import { getAdminBooks, addAdminBook, deleteAdminBook } from "@/lib/api";
+import React, { useState, useEffect, useCallback } from "react";
+import { AdminBook, AdminBookAddRequest, AdminInventory } from "@/lib/types";
+import {
+  getAdminBooks,
+  addAdminBook,
+  deleteAdminBook,
+  getAdminInventories,
+  deleteAdminInventory,
+} from "@/lib/api";
 import Modal from "@/components/shared/Modal";
 
 export default function AdminBookManager() {
   const [books, setBooks] = useState<AdminBook[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [expandedIsbn, setExpandedIsbn] = useState<string | null>(null);
+  const [inventories, setInventories] = useState<AdminInventory[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
   const [error, setError] = useState("");
 
   const fetchBooks = useCallback(async () => {
@@ -24,6 +33,34 @@ export default function AdminBookManager() {
     if (!confirm(`"${title}" 도서를 삭제하시겠습니까? 관련 재고가 모두 삭제됩니다.`)) return;
     const res = await deleteAdminBook(isbn);
     if (res.success) {
+      if (expandedIsbn === isbn) setExpandedIsbn(null);
+      fetchBooks();
+    } else {
+      alert(res.message);
+    }
+  };
+
+  const toggleInventory = async (isbn: string) => {
+    if (expandedIsbn === isbn) {
+      setExpandedIsbn(null);
+      setInventories([]);
+      return;
+    }
+    setExpandedIsbn(isbn);
+    setInventoryLoading(true);
+    const res = await getAdminInventories(isbn);
+    if (res.success) setInventories(res.data);
+    setInventoryLoading(false);
+  };
+
+  const handleDeleteInventory = async (inventoryId: number) => {
+    if (!confirm(`재고 #${inventoryId}를 삭제하시겠습니까?`)) return;
+    const res = await deleteAdminInventory(inventoryId);
+    if (res.success) {
+      if (expandedIsbn) {
+        const updated = await getAdminInventories(expandedIsbn);
+        if (updated.success) setInventories(updated.data);
+      }
       fetchBooks();
     } else {
       alert(res.message);
@@ -42,6 +79,8 @@ export default function AdminBookManager() {
         </button>
       </div>
 
+      {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+
       {loading ? (
         <div className="text-center py-8 text-gray-400">불러오는 중...</div>
       ) : (
@@ -49,6 +88,7 @@ export default function AdminBookManager() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
+                <th className="px-4 py-3 text-left w-6"></th>
                 <th className="px-4 py-3 text-left">ISBN</th>
                 <th className="px-4 py-3 text-left">제목</th>
                 <th className="px-4 py-3 text-left">저자</th>
@@ -61,29 +101,73 @@ export default function AdminBookManager() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {books.map((book) => (
-                <tr key={book.isbn} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{book.isbn}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{book.title}</td>
-                  <td className="px-4 py-3 text-gray-600">{book.author}</td>
-                  <td className="px-4 py-3">
-                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{book.category}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">{book.totalCount}</td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={book.availableCount > 0 ? "text-green-600" : "text-red-400"}>
-                      {book.availableCount}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-500">{book.rentCount}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleDelete(book.isbn, book.title)}
-                      className="text-red-500 hover:underline text-xs"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
+                <React.Fragment key={book.isbn}>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => toggleInventory(book.isbn)}
+                        className="text-gray-400 hover:text-blue-500 text-xs font-bold"
+                        title="재고 상세 보기"
+                      >
+                        {expandedIsbn === book.isbn ? "▼" : "▶"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{book.isbn}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{book.title}</td>
+                    <td className="px-4 py-3 text-gray-600">{book.author}</td>
+                    <td className="px-4 py-3">
+                      <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{book.category}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">{book.totalCount}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={book.availableCount > 0 ? "text-green-600" : "text-red-400"}>
+                        {book.availableCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-500">{book.rentCount}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleDelete(book.isbn, book.title)}
+                        className="text-red-500 hover:underline text-xs"
+                      >
+                        전체삭제
+                      </button>
+                    </td>
+                  </tr>
+
+                  {expandedIsbn === book.isbn && (
+                    <tr className="bg-blue-50">
+                      <td colSpan={9} className="px-8 py-3">
+                        {inventoryLoading ? (
+                          <span className="text-xs text-gray-400">재고 불러오는 중...</span>
+                        ) : inventories.length === 0 ? (
+                          <span className="text-xs text-gray-400">재고 없음</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            <span className="text-xs text-gray-500 font-medium self-center mr-1">재고 단건 삭제:</span>
+                            {inventories.map((inv) => (
+                              <div key={inv.inventoryId} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs">
+                                <span className="font-mono text-gray-600">#{inv.inventoryId}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${inv.available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-500"}`}>
+                                  {inv.available ? "가능" : "대여중"}
+                                </span>
+                                {inv.available && (
+                                  <button
+                                    onClick={() => handleDeleteInventory(inv.inventoryId)}
+                                    className="text-red-400 hover:text-red-600 ml-1 font-bold"
+                                    title="이 재고 삭제"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
