@@ -176,14 +176,9 @@ spring.jpa.show-sql=true
 
 외부 도서 데이터는 사용하지 않는다.
 
-목데이터는 `src/main/resources/data.sql`로 관리한다.
+개발 환경에서 Spring Boot 앱 시작 시 목데이터를 자동 생성한다.
 
-- `spring.sql.init.mode=always` 설정으로 앱 시작 시 자동 실행된다.
-- `spring.jpa.defer-datasource-initialization=true` 설정으로 JPA 스키마 생성 후 SQL 스크립트가 실행된다.
-- `data.sql`은 시작 시 테스트 상태(대여, 불량 지정, 소프트 삭제 등)를 초기 상태로 리셋한 뒤 초기 데이터를 삽입한다.
-- `MockDataInitializer`(`CommandLineRunner`)는 관리자 계정(`admin`) 생성만 담당한다.
-
-목데이터 기준은 `database-schema.md`와 `test-plan.md`를 따른다.
+목데이터 생성 기준은 `database-schema.md`와 `test-plan.md`를 따른다.
 
 ## 9. 트랜잭션 정책
 

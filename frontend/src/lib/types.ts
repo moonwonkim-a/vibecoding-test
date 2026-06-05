@@ -158,11 +158,6 @@ export interface AdminBookAddResponse {
   addedInventoryCount: number;
 }
 
-export interface AdminInventory {
-  inventoryId: number;
-  available: boolean;
-}
-
 // 관리자 현재 대여
 export interface AdminCurrentRental {
   rentId: number;
@@ -177,20 +172,27 @@ export interface AdminCurrentRental {
   overdueDays: number;
 }
 
-// 전체 반납 이력
-export interface ReturnHistoryItem {
+// 이용자 이력
+export interface UserHistoryItem {
   rentId: number;
   isbn: string;
   title: string;
-  userName: string;
-  userCode7: string;
-  userCode7Masked: string;
   rentDate: string;
   dueDate: string;
   returnDate: string | null;
+  status: string;
   overdue: boolean;
   overdueDays: number;
+}
+
+export interface UserHistoryResponse {
+  userName: string;
+  userCode7Masked: string;
   blacklisted: boolean;
+  blacklistReasonCode: string | null;
+  totalRentCount: number;
+  overdueCount: number;
+  histories: UserHistoryItem[];
   canBlacklist: boolean;
 }
 
@@ -229,7 +231,7 @@ export interface BlacklistUser {
 // 불량 해제
 export interface BlacklistReleaseRequest {
   userName: string;
-  userCode7Masked: string;
+  userCode7: string;
 }
 
 export interface BlacklistReleaseResponse {

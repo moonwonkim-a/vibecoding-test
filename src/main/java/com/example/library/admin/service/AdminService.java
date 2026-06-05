@@ -4,7 +4,6 @@ import com.example.library.admin.dto.AdminBookAddRequestDto;
 import com.example.library.admin.dto.AdminBookAddResponseDto;
 import com.example.library.admin.dto.AdminBookDto;
 import com.example.library.admin.dto.AdminCurrentRentalDto;
-import com.example.library.admin.dto.AdminInventoryDto;
 import com.example.library.admin.dto.AdminLoginRequestDto;
 import com.example.library.admin.dto.AdminLoginResponseDto;
 import com.example.library.admin.dto.BlacklistReasonDto;
@@ -13,7 +12,8 @@ import com.example.library.admin.dto.BlacklistReleaseResponseDto;
 import com.example.library.admin.dto.BlacklistRequestDto;
 import com.example.library.admin.dto.BlacklistResponseDto;
 import com.example.library.admin.dto.BlacklistUserDto;
-import com.example.library.admin.dto.ReturnHistoryItemDto;
+import com.example.library.admin.dto.UserHistoryItemDto;
+import com.example.library.admin.dto.UserHistoryResponseDto;
 import com.example.library.admin.entity.LibraryAdmin;
 import com.example.library.admin.repository.LibraryAdminRepository;
 import com.example.library.book.entity.LibraryBookInfo;
@@ -30,6 +30,7 @@ import com.example.library.user.repository.LibraryBlacklistReasonRepository;
 import com.example.library.user.repository.LibraryUserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,8 +89,7 @@ public class AdminService {
                        SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count,
                        b.rent_count
                 FROM library_book_info b
-                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND i.del_yn = 'N'
-                WHERE b.del_yn = 'N'
+                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn
                 GROUP BY b.isbn, b.title, b.author, b.category, b.publisher, b.price, b.rent_count
                 ORDER BY b.title ASC
                 """;
@@ -120,10 +120,9 @@ public class AdminService {
         for (int i = 0; i < quantity; i++) {
             inventories.add(new LibraryBookInventory(bookInfo, true, null));
         }
-        List<LibraryBookInventory> saved = inventoryRepository.saveAll(inventories);
-        List<Long> inventoryIds = saved.stream().map(LibraryBookInventory::getInventoryId).toList();
+        inventoryRepository.saveAll(inventories);
 
-        return new AdminBookAddResponseDto(isbn, quantity, inventoryIds);
+        return new AdminBookAddResponseDto(isbn, quantity);
     }
 
     @Transactional
@@ -136,31 +135,19 @@ public class AdminService {
             throw BusinessException.of(ErrorCode.EX_007);
         }
 
-        inventoryRepository.softDeleteAllByIsbn(isbn);
-        bookInfoRepository.softDeleteByIsbn(isbn);
+        List<LibraryBookInventory> inventories = inventoryRepository.findAllByBookInfo(bookInfo);
+        inventoryRepository.deleteAll(inventories);
+        bookInfoRepository.delete(bookInfo);
     }
 
     @Transactional
     public void deleteInventory(Long inventoryId) {
         LibraryBookInventory inventory = inventoryRepository.findById(inventoryId)
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
-        if (inventory.isDeleted()) {
-            throw BusinessException.of(ErrorCode.EX_005);
-        }
         if (!inventory.isAvailable()) {
             throw BusinessException.of(ErrorCode.EX_007);
         }
-        inventoryRepository.softDeleteById(inventoryId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AdminInventoryDto> getInventoriesByIsbn(String isbn) {
-        if (!bookInfoRepository.existsById(isbn)) {
-            throw BusinessException.of(ErrorCode.EX_005);
-        }
-        return inventoryRepository.findAllActiveByIsbn(isbn).stream()
-                .map(i -> new AdminInventoryDto(i.getInventoryId(), i.isAvailable()))
-                .toList();
+        inventoryRepository.delete(inventory);
     }
 
     @Transactional(readOnly = true)
@@ -198,27 +185,59 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReturnHistoryItemDto> getReturnHistory() {
-        List<LibraryRentRecord> records = rentRecordRepository.findAllReturnedRecords();
+    public UserHistoryResponseDto getUserHistory(String userName, String userCode7) {
+        LibraryUser user = userRepository.findById(userCode7)
+                .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
 
-        return records.stream().map(r -> {
-            LibraryUser user = r.getUser();
-            return new ReturnHistoryItemDto(
+        if (!user.getUserName().equals(userName)) {
+            throw BusinessException.of(ErrorCode.EX_015);
+        }
+
+        List<LibraryRentRecord> records = rentRecordRepository.findAllByUser(user);
+        LocalDate today = LocalDate.now();
+
+        List<UserHistoryItemDto> histories = records.stream().map(r -> {
+            boolean isCurrentlyOverdue;
+            int calculatedOverdueDays;
+            String status;
+
+            if (r.getReturnDate() == null) {
+                isCurrentlyOverdue = today.isAfter(r.getDueDate());
+                calculatedOverdueDays = isCurrentlyOverdue ? (int) (today.toEpochDay() - r.getDueDate().toEpochDay()) : 0;
+                status = "RENTING";
+            } else {
+                isCurrentlyOverdue = r.isOverdue();
+                calculatedOverdueDays = r.getOverdueDays();
+                status = "RETURNED";
+            }
+
+            return new UserHistoryItemDto(
                     r.getRentId(),
                     r.getBookInfo().getIsbn(),
                     r.getBookInfo().getTitle(),
-                    r.getUserName(),
-                    user.getUserCode7(),
-                    maskUserCode7(user.getUserCode7()),
                     r.getRentDate(),
                     r.getDueDate(),
                     r.getReturnDate(),
-                    r.isOverdue(),
-                    r.getOverdueDays(),
-                    user.isBlacklisted(),
-                    !user.isBlacklisted()
+                    status,
+                    isCurrentlyOverdue,
+                    calculatedOverdueDays
             );
         }).toList();
+
+        long overdueCount = histories.stream().filter(UserHistoryItemDto::isOverdue).count();
+
+        String reasonCode = user.getBlacklistReason() != null ? user.getBlacklistReason().getReasonCode() : null;
+
+        return new UserHistoryResponseDto(
+                user.getUserName(),
+                maskUserCode7(userCode7),
+                user.isBlacklisted(),
+                reasonCode,
+                records.size(),
+                (int) overdueCount,
+                histories,
+                !user.isBlacklisted()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -269,11 +288,12 @@ public class AdminService {
 
     @Transactional
     public BlacklistReleaseResponseDto releaseBlacklist(BlacklistReleaseRequestDto request) {
-        LibraryUser user = userRepository.findAllBlacklisted().stream()
-                .filter(u -> u.getUserName().equals(request.getUserName())
-                          && maskUserCode7(u.getUserCode7()).equals(request.getUserCode7Masked()))
-                .findFirst()
+        LibraryUser user = userRepository.findById(request.getUserCode7())
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
+
+        if (!user.getUserName().equals(request.getUserName())) {
+            throw BusinessException.of(ErrorCode.EX_015);
+        }
 
         user.releaseBlacklist();
 
