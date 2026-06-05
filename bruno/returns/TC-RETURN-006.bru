@@ -1,0 +1,28 @@
+meta {
+  name: TC-RETURN-006 이용자 정보 불일치
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/returns/candidates
+  body: none
+  auth: none
+}
+
+params:query {
+  userName: 존재하지않는이름
+  userCode7: 9999999
+}
+
+assert {
+  res.status: eq 404
+  res.body.success: eq false
+  res.body.errorCode: eq EX-005
+}
+
+docs {
+  TC-RETURN-006 | EX-005 | 이용자 정보 불일치
+  기대 결과: 404, errorCode=EX-005 (조회 실패)
+  검증: 존재하지 않는 이용자 코드로 조회
+}

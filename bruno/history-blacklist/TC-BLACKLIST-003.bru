@@ -1,0 +1,42 @@
+meta {
+  name: TC-BLACKLIST-003 정상 불량 지정
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/admin/users/blacklist
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{userNormalName}}",
+    "userCode7": "{{userNormalCode}}",
+    "reasonCode": "OVERDUE_REPEAT",
+    "memo": null
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.blacklisted: eq true
+  res.body.data.reasonCode: eq OVERDUE_REPEAT
+  res.body.data.userName: isDefined
+  res.body.data.userCode7Masked: isDefined
+  res.body.data.blacklistedAt: isDefined
+}
+
+tests {
+  test("userCode7Masked가 앞4자리+*** 형식이어야 한다", function() {
+    expect(res.getBody().data.userCode7Masked).to.match(/^\d{4}\*\*\*$/);
+  });
+}
+
+docs {
+  TC-BLACKLIST-003 | FR-ADMIN-011 | 정상 불량 지정
+  기대 결과: is_blacklisted=true
+  전제 조건: 홍길동(9001151)이 현재 불량 이용자가 아닌 상태 (또는 TC-BLACKLIST-006으로 해제 후 실행)
+}

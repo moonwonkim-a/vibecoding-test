@@ -1,0 +1,34 @@
+meta {
+  name: TC-BLACKLIST-002 ETC 선택 시 메모 저장
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/admin/users/blacklist
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{userNormalName}}",
+    "userCode7": "{{userNormalCode}}",
+    "reasonCode": "ETC",
+    "memo": "테스트용 메모 저장 확인"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.blacklisted: eq true
+  res.body.data.reasonCode: eq ETC
+}
+
+docs {
+  TC-BLACKLIST-002 | FR-ADMIN-010 | ETC 선택 시 메모 저장
+  기대 결과: blacklisted=true, reasonCode=ETC, memo 저장
+  전제 조건: 홍길동(9001151)이 현재 불량 이용자가 아닌 상태
+  주의: 이 TC 실행 후 홍길동이 불량 이용자가 됨 - TC-BLACKLIST-006으로 해제 필요
+}

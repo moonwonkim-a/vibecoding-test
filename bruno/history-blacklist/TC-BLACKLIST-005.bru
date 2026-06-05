@@ -1,0 +1,43 @@
+meta {
+  name: TC-BLACKLIST-005 불량 이용자 목록 조회
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/admin/users/blacklist
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data: isDefined
+}
+
+tests {
+  test("불량 이용자가 1명 이상 있어야 한다", function() {
+    expect(res.getBody().data.length).to.be.gte(1);
+  });
+  test("각 항목에 필수 필드가 있어야 한다", function() {
+    const user = res.getBody().data[0];
+    expect(user.userName).to.be.isDefined;
+    expect(user.userCode7Masked).to.be.isDefined;
+    expect(user.reasonCode).to.be.isDefined;
+    expect(user.reasonLabel).to.be.isDefined;
+    expect(user.blacklistedAt).to.be.isDefined;
+  });
+  test("userCode7Masked가 앞4자리+*** 형식이어야 한다", function() {
+    const users = res.getBody().data;
+    users.forEach(function(user) {
+      expect(user.userCode7Masked).to.match(/^\d{4}\*\*\*$/);
+    });
+  });
+}
+
+docs {
+  TC-BLACKLIST-005 | FR-ADMIN-013 | 불량 이용자 목록 조회
+  기대 결과: 불량 이용자 목록 반환
+  전제 조건: 목데이터에 이영희(9507072) 불량 이용자 존재
+}

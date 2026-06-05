@@ -31,6 +31,9 @@ public class LibraryBookInfo {
     @Column(name = "rent_count", nullable = false)
     private Integer rentCount = 0;
 
+    @Column(name = "del_yn", nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'N'")
+    private String delYn = "N";
+
     protected LibraryBookInfo() {
     }
 
@@ -74,5 +77,13 @@ public class LibraryBookInfo {
 
     public void incrementRentCount() {
         this.rentCount++;
+    }
+
+    public boolean isDeleted() {
+        return "Y".equals(this.delYn);
+    }
+
+    public void softDelete() {
+        this.delYn = "Y";
     }
 }

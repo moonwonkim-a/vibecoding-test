@@ -94,6 +94,10 @@ public class RentalService {
         if (!user.getUserName().equals(userName)) {
             throw BusinessException.of(ErrorCode.EX_015);
         }
+
+        LibraryBookInfo bookInfo = bookInfoRepository.findById(isbn)
+                .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
+
         if (user.isBlacklisted()) {
             throw BusinessException.of(ErrorCode.EX_002);
         }
@@ -102,9 +106,6 @@ public class RentalService {
         if (currentRentCount >= 2) {
             throw BusinessException.of(ErrorCode.EX_001);
         }
-
-        LibraryBookInfo bookInfo = bookInfoRepository.findById(isbn)
-                .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
 
         LibraryBookInventory inventory = inventoryRepository.findFirstAvailableWithLock(bookInfo)
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_003));

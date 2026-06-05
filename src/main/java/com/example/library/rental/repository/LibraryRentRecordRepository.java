@@ -13,12 +13,16 @@ public interface LibraryRentRecordRepository extends JpaRepository<LibraryRentRe
     @Query("SELECT r FROM LibraryRentRecord r JOIN FETCH r.bookInfo JOIN FETCH r.inventory WHERE r.user = :user AND r.returnDate IS NULL")
     List<LibraryRentRecord> findCurrentRentalsByUser(@Param("user") LibraryUser user);
 
+
     @Query("SELECT COUNT(r) FROM LibraryRentRecord r WHERE r.user = :user AND r.returnDate IS NULL")
     long countCurrentRentalsByUser(@Param("user") LibraryUser user);
 
     @Query("SELECT r FROM LibraryRentRecord r JOIN FETCH r.bookInfo JOIN FETCH r.inventory WHERE r.returnDate IS NULL ORDER BY r.rentDate DESC")
     List<LibraryRentRecord> findAllCurrentRentals();
 
-    @Query("SELECT r FROM LibraryRentRecord r JOIN FETCH r.bookInfo JOIN FETCH r.inventory WHERE r.user = :user ORDER BY r.rentDate DESC")
-    List<LibraryRentRecord> findAllByUser(@Param("user") LibraryUser user);
+    @Query(value = "SELECT r.* FROM library_rent_records r WHERE r.user_code7 = :userCode7 ORDER BY r.rent_date DESC", nativeQuery = true)
+    List<LibraryRentRecord> findAllByUserCode7(@Param("userCode7") String userCode7);
+
+    @Query("SELECT r FROM LibraryRentRecord r JOIN FETCH r.bookInfo JOIN FETCH r.user WHERE r.returnDate IS NOT NULL ORDER BY r.returnDate DESC, r.rentId DESC")
+    List<LibraryRentRecord> findAllReturnedRecords();
 }

@@ -1,0 +1,32 @@
+meta {
+  name: TC-BLACKLIST-004 이미 불량 이용자 지정 시도
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/admin/users/blacklist
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{userBlacklistedName}}",
+    "userCode7": "{{userBlacklistedCode}}",
+    "reasonCode": "OVERDUE_REPEAT",
+    "memo": null
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.success: eq false
+  res.body.errorCode: eq EX-011
+}
+
+docs {
+  TC-BLACKLIST-004 | FR-ADMIN-012, EX-011 | 이미 불량 이용자 지정 시도
+  기대 결과: 409, errorCode=EX-011 (지정 차단)
+  전제 조건: 이영희(9507072) - 이미 불량 이용자 상태
+}

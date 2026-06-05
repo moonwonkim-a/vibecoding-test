@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminBookManager from "@/components/admin/AdminBookManager";
 import AdminRentalPanel from "@/components/admin/AdminRentalPanel";
-import AdminUserHistory from "@/components/admin/AdminUserHistory";
+import AdminReturnHistory from "@/components/admin/AdminReturnHistory";
 import AdminBlacklistPanel from "@/components/admin/AdminBlacklistPanel";
 import { adminLogout } from "@/lib/api";
 
@@ -46,7 +46,7 @@ export default function AdminPage() {
   const TABS = [
     { key: "books", label: "도서 관리" },
     { key: "rentals", label: "대여 현황" },
-    { key: "history", label: "이용자 이력" },
+    { key: "history", label: "반납 이력" },
     { key: "blacklist", label: "불량 이용자" },
   ] as { key: Tab; label: string }[];
 
@@ -101,7 +101,7 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === "books" && <AdminBookManager />}
         {activeTab === "rentals" && <AdminRentalPanel />}
-        {activeTab === "history" && <AdminUserHistory />}
+        {activeTab === "history" && <AdminReturnHistory />}
         {activeTab === "blacklist" && <AdminBlacklistPanel />}
       </main>
     </div>

@@ -1,0 +1,36 @@
+meta {
+  name: TC-ADMIN-BOOK-003 기존 ISBN 재고 추가
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/admin/books
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isbn": "{{newTestIsbn}}",
+    "title": "테스트 신규 도서",
+    "author": "테스트 저자",
+    "publisher": "테스트 출판사",
+    "category": "테스트",
+    "price": 15000,
+    "quantity": 1
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.addedInventoryCount: eq 1
+  res.body.message: eq 도서가 추가되었습니다.
+}
+
+docs {
+  TC-ADMIN-BOOK-003 | FR-ADMIN-003 | 기존 ISBN 재고 추가
+  기대 결과: inventory만 추가 (book_info 중복 생성 없음), addedInventoryCount=1
+  전제 조건: TC-ADMIN-BOOK-002 실행 후 {{newTestIsbn}} ISBN이 이미 존재하는 상태
+}

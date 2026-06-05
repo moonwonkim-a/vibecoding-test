@@ -1,0 +1,24 @@
+meta {
+  name: TC-ADMIN-BOOK-005 대여 중이 아닌 재고 삭제
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/admin/inventories/{{availableInventoryId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.inventoryId: isDefined
+  res.body.message: eq 재고가 삭제되었습니다.
+}
+
+docs {
+  TC-ADMIN-BOOK-005 | FR-ADMIN-004 | 대여 중이 아닌 재고 삭제
+  기대 결과: 삭제 성공
+  전제 조건: TC-ADMIN-BOOK-002 실행 후 vars:post-response로 캡처된 {{availableInventoryId}} 사용
+}

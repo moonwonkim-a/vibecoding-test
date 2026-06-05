@@ -6,7 +6,11 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
       connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+  sql:
+    init:
+      mode: always
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.MariaDBDialect

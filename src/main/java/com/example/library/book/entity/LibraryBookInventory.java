@@ -31,6 +31,9 @@ public class LibraryBookInventory {
     @Column(name = "rent_date")
     private LocalDate rentDate;
 
+    @Column(name = "del_yn", nullable = false, length = 1, columnDefinition = "CHAR(1) DEFAULT 'N'")
+    private String delYn = "N";
+
     protected LibraryBookInventory() {
     }
 
@@ -64,5 +67,13 @@ public class LibraryBookInventory {
     public void markReturned() {
         this.available = true;
         this.rentDate = null;
+    }
+
+    public boolean isDeleted() {
+        return "Y".equals(this.delYn);
+    }
+
+    public void softDelete() {
+        this.delYn = "Y";
     }
 }

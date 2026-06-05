@@ -1,0 +1,36 @@
+meta {
+  name: TC-RENT-003 현재 2권 대여 이용자 추가 대여 시도
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/rentals/check
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{userMaxRentName}}",
+    "userCode7": "{{userMaxRentCode}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.canRent: eq false
+}
+
+tests {
+  test("현재 대여 권수가 2권이어야 한다", function() {
+    expect(res.getBody().data.currentRentCount).to.eq(2);
+  });
+}
+
+docs {
+  TC-RENT-003 | FR-RENT-003, EX-001 | 현재 2권 대여 이용자 추가 대여 시도
+  기대 결과: canRent=false (대여 차단)
+  전제 조건: 김민수(0102033) - 현재 대여 2권
+}

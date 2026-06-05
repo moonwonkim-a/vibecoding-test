@@ -1,0 +1,34 @@
+meta {
+  name: TC-BLACKLIST-006 불량 해제
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/admin/users/blacklist/release
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{userBlacklistedName}}",
+    "userCode7Masked": "9507***"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.blacklisted: eq false
+  res.body.data.userName: isDefined
+  res.body.data.userCode7Masked: isDefined
+  res.body.message: eq 불량 이용자 상태가 해제되었습니다.
+}
+
+docs {
+  TC-BLACKLIST-006 | FR-ADMIN-013 | 불량 해제
+  기대 결과: is_blacklisted=false
+  전제 조건: 이영희(9507072) - 불량 이용자 상태
+             요청 body: userCode7Masked는 앞4자리+*** 형식 사용 (9507***)
+}

@@ -25,15 +25,17 @@ public class ReturnController {
         this.returnService = returnService;
     }
 
+    // 반납 후보 목록 조회 기능 (이름·코드로 현재 대여 중인 도서 목록 조회)
     @GetMapping("/candidates")
     public ApiResponse<List<ReturnCandidateDto>> getCandidates(
-            @RequestParam String userName,
-            @RequestParam String userCode7
+            @RequestParam(name = "userName") String userName,
+            @RequestParam(name = "userCode7") String userCode7
     ) {
         List<ReturnCandidateDto> data = returnService.getCandidates(userName, userCode7);
         return ApiResponse.success(data, "반납 가능한 도서를 조회했습니다.");
     }
 
+    // 도서 반납 기능 (재고 복구, 연체 여부 판정 및 연체일 기록)
     @PostMapping
     public ApiResponse<ReturnResponseDto> returnBook(@Valid @RequestBody ReturnRequestDto request) {
         ReturnResponseDto data = returnService.returnBook(request);

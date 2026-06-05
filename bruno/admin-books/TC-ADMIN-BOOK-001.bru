@@ -1,0 +1,35 @@
+meta {
+  name: TC-ADMIN-BOOK-001 전체 도서/재고 현황 조회
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/admin/books
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data: isDefined
+}
+
+tests {
+  test("도서 목록이 1건 이상 있어야 한다", function() {
+    expect(res.getBody().data.length).to.be.gte(1);
+  });
+  test("각 항목에 totalCount, availableCount, rentCount가 포함되어야 한다", function() {
+    const book = res.getBody().data[0];
+    expect(book.totalCount).to.be.isDefined;
+    expect(book.availableCount).to.be.isDefined;
+    expect(book.rentCount).to.be.isDefined;
+  });
+}
+
+docs {
+  TC-ADMIN-BOOK-001 | FR-ADMIN-002 | 전체 도서/재고 현황 조회
+  기대 결과: 수량 정보 포함 전체 도서 목록
+  전제 조건: TC-ADMIN-LOGIN-001 실행 후 로그인 상태
+}

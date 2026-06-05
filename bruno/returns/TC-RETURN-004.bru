@@ -1,0 +1,42 @@
+meta {
+  name: TC-RETURN-004 반납 기록 확인
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/returns
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "rentId": {{returnRentId}},
+    "userName": "{{userOneRentName}}",
+    "userCode7": "{{userOneRentCode}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.returnDate: isDefined
+}
+
+tests {
+  test("returnDate가 null이 아니어야 한다", function() {
+    expect(res.getBody().data.returnDate).to.not.be.null;
+  });
+  test("returnDate 형식이 YYYY-MM-DD여야 한다", function() {
+    const returnDate = res.getBody().data.returnDate;
+    expect(returnDate).to.match(/^\d{4}-\d{2}-\d{2}$/);
+  });
+}
+
+docs {
+  TC-RETURN-004 | FR-RETURN-006 | 반납 기록 확인
+  기대 결과: return_date 저장 확인
+  전제 조건: TC-RETURN-001 실행 후 {{returnRentId}} 설정됨
+  주의: TC-RETURN-003과 동일한 rentId 사용 불가 (이미 반납된 상태). 별도 rentId 필요
+}

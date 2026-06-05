@@ -1,0 +1,31 @@
+meta {
+  name: TC-RENT-009 재고 0권 도서 대여 시도
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/rentals
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isbn": "{{unavailableIsbn}}",
+    "userName": "{{userNormalName}}",
+    "userCode7": "{{userNormalCode}}"
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.success: eq false
+  res.body.errorCode: eq EX-003
+}
+
+docs {
+  TC-RENT-009 | EX-003 | 재고 0권 도서 대여 시도
+  기대 결과: 409, errorCode=EX-003 (대여 차단)
+  전제 조건: {{unavailableIsbn}} 도서의 모든 재고가 대여 중인 상태
+}

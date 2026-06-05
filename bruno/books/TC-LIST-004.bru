@@ -1,0 +1,36 @@
+meta {
+  name: TC-LIST-004 가격 내림차순 정렬
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/books
+  body: none
+  auth: none
+}
+
+params:query {
+  sort: price
+  direction: desc
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.content: isDefined
+}
+
+tests {
+  test("가격이 내림차순으로 정렬되어야 한다", function() {
+    const content = res.getBody().data.content;
+    for (let i = 1; i < content.length; i++) {
+      expect(content[i-1].price).to.be.gte(content[i].price);
+    }
+  });
+}
+
+docs {
+  TC-LIST-004 | FR-LIST-003 | 가격 내림차순 정렬
+  기대 결과: 가격 기준 desc 정렬
+}

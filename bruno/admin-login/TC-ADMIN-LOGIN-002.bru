@@ -1,0 +1,29 @@
+meta {
+  name: TC-ADMIN-LOGIN-002 잘못된 비밀번호 로그인
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/admin/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "adminId": "{{adminId}}",
+    "adminPw": "wrongpassword"
+  }
+}
+
+assert {
+  res.status: eq 401
+  res.body.success: eq false
+  res.body.errorCode: eq EX-008
+}
+
+docs {
+  TC-ADMIN-LOGIN-002 | EX-008 | 잘못된 비밀번호 로그인
+  기대 결과: 401, errorCode=EX-008 (로그인 실패)
+}

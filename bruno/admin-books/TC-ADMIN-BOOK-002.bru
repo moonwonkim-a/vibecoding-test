@@ -1,0 +1,42 @@
+meta {
+  name: TC-ADMIN-BOOK-002 신규 ISBN 도서 추가
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/admin/books
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "isbn": "{{newTestIsbn}}",
+    "title": "테스트 신규 도서",
+    "author": "테스트 저자",
+    "publisher": "테스트 출판사",
+    "category": "테스트",
+    "price": 15000,
+    "quantity": 2
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.isbn: eq 9781111111111
+  res.body.data.addedInventoryCount: eq 2
+  res.body.message: eq 도서가 추가되었습니다.
+}
+
+vars:post-response {
+  availableInventoryId: res.body.data.inventoryIds[0]
+}
+
+docs {
+  TC-ADMIN-BOOK-002 | FR-ADMIN-003 | 신규 ISBN 도서 추가
+  기대 결과: book_info와 inventory 생성, addedInventoryCount=2
+  전제 조건: TC-ADMIN-LOGIN-001 실행 후 로그인 상태, {{newTestIsbn}} ISBN이 존재하지 않는 상태
+  주의: 재실행 시 이미 존재하는 ISBN으로 TC-ADMIN-BOOK-003 동작. 목데이터 초기화 필요.
+}

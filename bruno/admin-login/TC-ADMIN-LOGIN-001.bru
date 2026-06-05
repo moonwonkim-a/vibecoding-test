@@ -1,0 +1,33 @@
+meta {
+  name: TC-ADMIN-LOGIN-001 정상 로그인
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/admin/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "adminId": "{{adminId}}",
+    "adminPw": "{{adminPw}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data.adminId: eq admin
+  res.body.data.adminName: isDefined
+  res.body.message: eq 로그인되었습니다.
+}
+
+docs {
+  TC-ADMIN-LOGIN-001 | FR-ADMIN-001 | 정상 로그인
+  기대 결과: 로그인 성공, 세션 쿠키 발급
+  전제 조건: 목데이터 관리자 계정 (admin/admin1234) 존재
+  참고: 이 TC 실행 후 세션 쿠키(JSESSIONID)가 설정됨. 이후 admin-login, admin-books, admin-rentals, history-blacklist 테스트에서 자동 사용됨
+}

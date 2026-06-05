@@ -1,0 +1,37 @@
+meta {
+  name: TC-LIST-001 도서 목록 기본 조회
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/books
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.data: isDefined
+  res.body.data.content: isDefined
+  res.body.data.page: isDefined
+  res.body.data.size: isDefined
+  res.body.data.totalElements: isDefined
+  res.body.data.totalPages: isDefined
+}
+
+tests {
+  test("content는 30건 이하여야 한다", function() {
+    expect(res.getBody().data.content.length).to.be.lte(30);
+  });
+  test("size 기본값은 30이다", function() {
+    expect(res.getBody().data.size).to.eq(30);
+  });
+}
+
+docs {
+  TC-LIST-001 | FR-LIST-001 | 도서 목록 기본 조회
+  기대 결과: 30건 이하 페이징 응답
+  전제 조건: 목데이터 초기화 상태 (최소 40권 등록)
+}
