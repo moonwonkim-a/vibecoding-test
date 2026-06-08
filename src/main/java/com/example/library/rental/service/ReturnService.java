@@ -2,6 +2,7 @@ package com.example.library.rental.service;
 
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.exception.ErrorCode;
+import com.example.library.common.util.UserCode7Util;
 import com.example.library.rental.dto.ReturnCandidateDto;
 import com.example.library.rental.dto.ReturnRequestDto;
 import com.example.library.rental.dto.ReturnResponseDto;
@@ -29,6 +30,8 @@ public class ReturnService {
 
     @Transactional(readOnly = true)
     public List<ReturnCandidateDto> getCandidates(String userName, String userCode7) {
+        UserCode7Util.validate(userCode7);
+
         LibraryUser user = userRepository.findById(userCode7)
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
 
@@ -87,5 +90,12 @@ public class ReturnService {
                 record.isOverdue(),
                 record.getOverdueDays()
         );
+    }
+
+    public String getReturnSuccessMessage(ReturnResponseDto response) {
+        if (response.isOverdue()) {
+            return ErrorCode.EX_004.getMessage();
+        }
+        return "반납이 완료되었습니다. 감사합니다.";
     }
 }

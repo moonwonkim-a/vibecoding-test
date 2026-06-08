@@ -86,4 +86,13 @@ public class LibraryBookInfo {
     public void softDelete() {
         this.delYn = "Y";
     }
+
+    public void restore(String title, String author, String publisher, String category, Integer price) {
+        this.delYn = "N";
+        this.title = title;
+        this.author = author;
+        this.publisher = publisher;
+        this.category = category;
+        this.price = price;
+    }
 }

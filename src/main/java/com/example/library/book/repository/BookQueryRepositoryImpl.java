@@ -45,8 +45,8 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
         int safePage = Math.max(0, page);
         Query listQuery = entityManager.createNativeQuery(listSql);
         Query countQuery = entityManager.createNativeQuery(countSql);
-        applyKeywordParam(listQuery, keyword);
-        applyKeywordParam(countQuery, keyword);
+        applyKeywordParam(listQuery, keyword, filter);
+        applyKeywordParam(countQuery, keyword, filter);
         listQuery.setFirstResult(safePage * size);
         listQuery.setMaxResults(size);
 
@@ -93,16 +93,23 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
             return clause.toString();
         }
 
-        String normalizedFilter = Optional.ofNullable(filter).orElse("").toLowerCase(Locale.ROOT);
+        String normalizedFilter = Optional.ofNullable(filter).orElse("").trim().toLowerCase(Locale.ROOT);
         String keywordCondition = switch (normalizedFilter) {
-            case "title" -> "LOWER(b.title) LIKE LOWER(:keyword)";
-            case "author" -> "LOWER(b.author) LIKE LOWER(:keyword)";
-            case "category" -> "LOWER(b.category) LIKE LOWER(:keyword)";
-            case "publisher" -> "LOWER(b.publisher) LIKE LOWER(:keyword)";
-            default -> "(LOWER(b.title) LIKE LOWER(:keyword) OR LOWER(b.author) LIKE LOWER(:keyword) OR LOWER(b.category) LIKE LOWER(:keyword) OR LOWER(b.publisher) LIKE LOWER(:keyword))";
+            case "title" -> "LOWER(b.title) LIKE LOWER(?)";
+            case "author" -> "LOWER(b.author) LIKE LOWER(?)";
+            case "category" -> "LOWER(b.category) LIKE LOWER(?)";
+            case "publisher" -> "LOWER(b.publisher) LIKE LOWER(?)";
+            default -> buildAllFieldsKeywordCondition();
         };
 
         return clause.append(" AND ").append(keywordCondition).toString();
+    }
+
+    private String buildAllFieldsKeywordCondition() {
+        return "(LOWER(b.title) LIKE LOWER(?)"
+                + " OR LOWER(b.author) LIKE LOWER(?)"
+                + " OR LOWER(b.category) LIKE LOWER(?)"
+                + " OR LOWER(b.publisher) LIKE LOWER(?))";
     }
 
     private String buildOrderByClause(String sort, String direction) {
@@ -121,10 +128,25 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
         return " ORDER BY " + sortColumn + " " + normalizedDirection + ", b.isbn ASC";
     }
 
-    private void applyKeywordParam(Query query, String keyword) {
-        if (keyword != null && !keyword.isBlank()) {
-            query.setParameter("keyword", "%" + keyword.trim() + "%");
+    private void applyKeywordParam(Query query, String keyword, String filter) {
+        if (keyword == null || keyword.isBlank()) {
+            return;
         }
+        String pattern = "%" + keyword.trim() + "%";
+        String normalizedFilter = Optional.ofNullable(filter).orElse("").trim().toLowerCase(Locale.ROOT);
+
+        if ("title".equals(normalizedFilter)
+                || "author".equals(normalizedFilter)
+                || "category".equals(normalizedFilter)
+                || "publisher".equals(normalizedFilter)) {
+            query.setParameter(1, pattern);
+            return;
+        }
+
+        query.setParameter(1, pattern);
+        query.setParameter(2, pattern);
+        query.setParameter(3, pattern);
+        query.setParameter(4, pattern);
     }
 
     private long toLongOrZero(Object value) {

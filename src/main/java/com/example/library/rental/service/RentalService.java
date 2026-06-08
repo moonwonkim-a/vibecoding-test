@@ -6,6 +6,7 @@ import com.example.library.book.repository.LibraryBookInfoRepository;
 import com.example.library.book.repository.LibraryBookInventoryRepository;
 import com.example.library.common.exception.BusinessException;
 import com.example.library.common.exception.ErrorCode;
+import com.example.library.common.util.UserCode7Util;
 import com.example.library.rental.dto.CurrentRentalItemDto;
 import com.example.library.rental.dto.RentalCheckRequestDto;
 import com.example.library.rental.dto.RentalCheckResponseDto;
@@ -69,7 +70,7 @@ public class RentalService {
 
             return new RentalCheckResponseDto(
                     user.getUserName(),
-                    maskUserCode7(userCode7),
+                    UserCode7Util.mask(userCode7),
                     user.isBlacklisted(),
                     rentCount,
                     canRent,
@@ -77,7 +78,7 @@ public class RentalService {
             );
         }
 
-        return new RentalCheckResponseDto(userName, maskUserCode7(userCode7), false, 0, true, Collections.emptyList());
+        return new RentalCheckResponseDto(userName, UserCode7Util.mask(userCode7), false, 0, true, Collections.emptyList());
     }
 
     @Transactional
@@ -96,6 +97,7 @@ public class RentalService {
         }
 
         LibraryBookInfo bookInfo = bookInfoRepository.findById(isbn)
+                .filter(b -> !b.isDeleted())
                 .orElseThrow(() -> BusinessException.of(ErrorCode.EX_005));
 
         if (user.isBlacklisted()) {
@@ -129,9 +131,5 @@ public class RentalService {
                 rentDate,
                 dueDate
         );
-    }
-
-    private String maskUserCode7(String code) {
-        return code.substring(0, 4) + "***";
     }
 }

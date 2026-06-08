@@ -73,7 +73,7 @@ export default function BookList({ refreshSignal = 0 }: { refreshSignal?: number
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
         >
           {FILTER_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value || "all"} value={o.value}>{o.label}</option>
           ))}
         </select>
         <div className="flex flex-1 gap-2">
