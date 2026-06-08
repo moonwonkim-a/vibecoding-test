@@ -21,7 +21,7 @@ const FILTER_OPTIONS = [
   { value: "publisher", label: "출판사" },
 ];
 
-export default function BookList({ refreshSignal = 0 }: { refreshSignal?: number }) {
+export default function BookList() {
   const [data, setData] = useState<BookListResponse | null>(null);
   const [page, setPage] = useState(0);
   const [keyword, setKeyword] = useState("");
@@ -42,11 +42,6 @@ export default function BookList({ refreshSignal = 0 }: { refreshSignal?: number
   useEffect(() => {
     fetchBooks();
   }, [fetchBooks]);
-
-  useEffect(() => {
-    if (refreshSignal > 0) fetchBooks();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshSignal]);
 
   const handleSearch = () => {
     setKeyword(inputKeyword);

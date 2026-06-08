@@ -575,46 +575,56 @@ Response:
 }
 ```
 
-### GET /admin/return-history
+### GET /admin/users/history
 
-전체 도서의 반납 완료 이력을 조회한다. 별도 파라미터 없이 모든 반납 기록을 반납일 최신순으로 반환한다.
+특정 이용자의 전체 대여/반납 이력을 조회한다.
 
 관련 요구사항:
 
 - FR-ADMIN-006
 - FR-ADMIN-007
-- FR-ADMIN-008
 - FR-ADMIN-012
+- EX-005
+- EX-013
+- EX-014
 
-Query Parameters: 없음
+Query Parameters:
+
+| 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| userName | string | yes | 이용자 이름 |
+| userCode7 | string | yes | 테스트용 7자리 식별 코드 |
 
 Response:
 
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "rentId": 1,
-      "isbn": "9788966262281",
-      "title": "자바의 정석",
-      "userName": "홍길동",
-      "userCode7": "9001151",
-      "userCode7Masked": "9001***",
-      "rentDate": "2026-05-01",
-      "dueDate": "2026-05-22",
-      "returnDate": "2026-05-25",
-      "overdue": true,
-      "overdueDays": 3,
-      "blacklisted": false,
-      "canBlacklist": true
-    }
-  ],
-  "message": "전체 반납 이력을 조회했습니다."
+  "data": {
+    "userName": "홍길동",
+    "userCode7Masked": "9001***",
+    "blacklisted": false,
+    "blacklistReasonCode": null,
+    "totalRentCount": 3,
+    "overdueCount": 1,
+    "histories": [
+      {
+        "rentId": 1,
+        "isbn": "9788966262281",
+        "title": "자바의 정석",
+        "rentDate": "2026-05-01",
+        "dueDate": "2026-05-22",
+        "returnDate": "2026-05-25",
+        "status": "RETURNED",
+        "overdue": true,
+        "overdueDays": 3
+      }
+    ],
+    "canBlacklist": true
+  },
+  "message": "이용자 반납 이력을 조회했습니다."
 }
 ```
-
-각 항목의 `userCode7`은 행 단위 불량 이용자 지정 액션에 사용한다(관리자 인증 전용). 화면에는 `userCode7Masked`만 표시한다(NFR-003). `canBlacklist`는 해당 이용자가 아직 불량 상태가 아니면 `true`이다.
 
 ### GET /admin/blacklist-reasons
 

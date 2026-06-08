@@ -1,10 +1,14 @@
-# ─── Gradle ───────────────────────────────────────
+# ─── Gradle / Java build ──────────────────────────
 .gradle/
 build/
+bin/
 out/
+*.class
+
 # ─── Spring Boot ──────────────────────────────────
 # DB 계정 정보 포함
 src/main/resources/application.yml
+server.log
 
 # ─── Next.js / Node ───────────────────────────────
 frontend/node_modules/
@@ -27,6 +31,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# ─── E2E (Playwright) ─────────────────────────────
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+e2e/.cache/
 
 # ─── IDE ──────────────────────────────────────────
 .vscode/

@@ -22,14 +22,12 @@ public class RentalController {
         this.rentalService = rentalService;
     }
 
-    // 대여 가능 여부 확인 기능 (이름·코드 검증, 불량·한도 체크, 현재 대여 목록 반환)
     @PostMapping("/check")
     public ApiResponse<RentalCheckResponseDto> checkRental(@Valid @RequestBody RentalCheckRequestDto request) {
         RentalCheckResponseDto data = rentalService.checkRental(request);
         return ApiResponse.success(data, "대여 가능 여부를 확인했습니다.");
     }
 
-    // 도서 대여 기능 (재고 차감, 대여일·반납 예정일 기록)
     @PostMapping
     public ApiResponse<RentalResponseDto> rent(@Valid @RequestBody RentalRequestDto request) {
         RentalResponseDto data = rentalService.rent(request);
