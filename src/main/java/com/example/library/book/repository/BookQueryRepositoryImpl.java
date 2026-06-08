@@ -18,6 +18,8 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
 
     private static final String ACTIVE_BOOK_FILTER = "(b.del_yn IS NULL OR b.del_yn = 'N')";
     private static final String ACTIVE_INVENTORY_JOIN = "(i.del_yn IS NULL OR i.del_yn = 'N')";
+    private static final String INVENTORY_JOIN =
+            " LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND " + ACTIVE_INVENTORY_JOIN;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -27,20 +29,19 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
         String whereClause = buildWhereClause(keyword, filter);
         String orderByClause = buildOrderByClause(sort, direction);
 
-        String baseSql = """
-                FROM library_book_info b
-                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND """ + ACTIVE_INVENTORY_JOIN + whereClause + """
-                GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price, b.rent_count
-                """;
+        String baseSql = " FROM library_book_info b"
+                + INVENTORY_JOIN
+                + whereClause
+                + " GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price, b.rent_count";
 
-        String listSql = """
-                SELECT b.isbn, b.title, b.author, b.publisher, b.category, b.price,
-                       COUNT(i.inventory_id) AS total_count,
-                       SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count,
-                       b.rent_count
-                """ + baseSql + orderByClause;
+        String listSql = "SELECT b.isbn, b.title, b.author, b.publisher, b.category, b.price,"
+                + " COUNT(i.inventory_id) AS total_count,"
+                + " SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count,"
+                + " b.rent_count"
+                + baseSql
+                + orderByClause;
 
-        String countSql = "SELECT COUNT(*) FROM (SELECT b.isbn " + baseSql + ") t";
+        String countSql = "SELECT COUNT(*) FROM (SELECT b.isbn" + baseSql + ") t";
 
         int safePage = Math.max(0, page);
         Query listQuery = entityManager.createNativeQuery(listSql);
@@ -65,15 +66,13 @@ public class BookQueryRepositoryImpl implements BookQueryRepository {
 
     @Override
     public BookDetailDto findBookDetail(String isbn) {
-        String detailSql = """
-                SELECT b.isbn, b.title, b.author, b.publisher, b.category, b.price,
-                       COUNT(i.inventory_id) AS total_count,
-                       SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count
-                FROM library_book_info b
-                LEFT JOIN library_book_inventory i ON b.isbn = i.isbn AND """ + ACTIVE_INVENTORY_JOIN + """
-                WHERE b.isbn = ? AND """ + ACTIVE_BOOK_FILTER + """
-                GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price
-                """;
+        String detailSql = "SELECT b.isbn, b.title, b.author, b.publisher, b.category, b.price,"
+                + " COUNT(i.inventory_id) AS total_count,"
+                + " SUM(CASE WHEN i.available = true THEN 1 ELSE 0 END) AS available_count"
+                + " FROM library_book_info b"
+                + INVENTORY_JOIN
+                + " WHERE b.isbn = ? AND " + ACTIVE_BOOK_FILTER
+                + " GROUP BY b.isbn, b.title, b.author, b.publisher, b.category, b.price";
 
         Query query = entityManager.createNativeQuery(detailSql);
         query.setParameter(1, isbn);

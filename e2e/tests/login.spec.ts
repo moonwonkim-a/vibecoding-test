@@ -58,7 +58,7 @@ test.describe('관리자 로그인', () => {
     await expect(page.getByText(`${ADMIN.name} 님`)).toBeVisible();
     await expect(page.getByRole('button', { name: '도서 관리' })).toBeVisible();
     await expect(page.getByRole('button', { name: '대여 현황' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '반납 이력' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '이용자 이력' })).toBeVisible();
     await expect(page.getByRole('button', { name: '불량 이용자' })).toBeVisible();
   });
 
